@@ -259,7 +259,7 @@ void CanWork::resetJobVars()
 
 	m_repeatJob = false;
 
-	m_btBlackBoard.remove( "JobType" );
+	m_btBlackBoard.erase( "JobType" );
 }
 
 void CanWork::cleanUpJob( bool finished )
@@ -316,10 +316,10 @@ void CanWork::cleanUpJob( bool finished )
 	}
 	if( m_btBlackBoard.contains( "ClaimedUniformItem" ) )
 	{
-		auto itemID = m_btBlackBoard.value( "ClaimedUniformItem" ).toUInt();
+		auto itemID = std::get<int>(m_btBlackBoard.at( "ClaimedUniformItem" ));
 		g->inv()->setInJob( itemID, 0 );
-		m_btBlackBoard.remove( "ClaimedUniformItem" );
-		m_btBlackBoard.remove( "ClaimedUniformItemSlot" );
+		m_btBlackBoard.erase( "ClaimedUniformItem" );
+		m_btBlackBoard.erase( "ClaimedUniformItemSlot" );
 	}
 
 	for ( auto itemID : m_carriedItems )
@@ -513,12 +513,12 @@ double CanWork::parseValue( QVariant v )
 bool CanWork::dropEquippedItem()
 {
 	// release a claimed tool if this is run before the gnome picked it up
-	unsigned int claimedItem = m_btBlackBoard.value( "ClaimedTool" ).toUInt();
+	unsigned int claimedItem = maps::get_or_default<int>( m_btBlackBoard.at( "ClaimedTool" ), 0 );
 	if ( claimedItem )
 	{
 		g->inv()->setInJob( claimedItem, 0 );
 	}
-	m_btBlackBoard.remove( "ClaimedTool" );
+	m_btBlackBoard.erase( "ClaimedTool" );
 
 	unsigned int equippedItem = m_equipment.rightHandHeld.itemID;
 	if ( equippedItem )

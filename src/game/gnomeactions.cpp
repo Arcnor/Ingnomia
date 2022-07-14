@@ -506,7 +506,7 @@ BT_RESULT Gnome::actionPickUpItem( bool halt )
 
 	if ( m_btBlackBoard.contains( "ClaimedInventoryItem" ) )
 	{
-		if ( m_itemToPickUp == m_btBlackBoard.value( "ClaimedInventoryItem" ).toUInt() )
+		if ( m_itemToPickUp == (unsigned)std::get<int>( m_btBlackBoard.at( "ClaimedInventoryItem" ) ) )
 		{
 			m_inventoryItems.append( m_itemToPickUp );
 			if ( g->inv()->itemSID( m_itemToPickUp ) == "Bandage" )
@@ -526,7 +526,7 @@ BT_RESULT Gnome::actionPickUpItem( bool halt )
 		{
 			m_carriedItems.append( m_itemToPickUp );
 		}
-		m_btBlackBoard.remove( "ClaimedInventoryItem" );
+		m_btBlackBoard.erase( "ClaimedInventoryItem" );
 	}
 	else
 	{
@@ -590,7 +590,7 @@ BT_RESULT Gnome::actionGetJob( bool halt )
 		m_job->setWorkedBy( m_id );
 
 		log( "JobType " + m_job->type() );
-		m_btBlackBoard.insert( "JobType", m_job->type() );
+		m_btBlackBoard["JobType"] = m_job->type().toStdString();
 		m_currentAction = "job";
 
 		bool mayTrap = DB::select( "MayTrapGnome", "Jobs", m_job->type() ).toBool();
@@ -1087,7 +1087,7 @@ BT_RESULT Gnome::actionFindTool( bool halt )
 				{
 					m_job->setToolPosition( g->inv()->getItemPos( tool ) );
 					g->inv()->setInJob( tool, m_job->id() );
-					m_btBlackBoard.insert( "ClaimedTool", tool );
+					m_btBlackBoard["ClaimedTool"] = tool;
 
 					setCurrentTarget( g->inv()->getItemPos( tool ) );
 
@@ -1128,7 +1128,7 @@ BT_RESULT Gnome::actionEquipTool( bool halt )
 		}
 	}
 
-	unsigned int claimedTool = m_btBlackBoard.value( "ClaimedTool" ).toUInt();
+	unsigned int claimedTool = maps::get_or_default<int>( m_btBlackBoard, "ClaimedTool", 0 );
 	if ( claimedTool )
 	{
 		if ( m_position == g->inv()->getItemPos( claimedTool ) )
@@ -1139,7 +1139,7 @@ BT_RESULT Gnome::actionEquipTool( bool halt )
 			m_equipment.rightHandHeld.materialID = g->inv()->materialUID( claimedTool );
 			m_equipment.rightHandHeld.material   = g->inv()->materialSID( claimedTool );
 
-			m_btBlackBoard.remove( "ClaimedTool" );
+			m_btBlackBoard.erase( "ClaimedTool" );
 
 			equipHand( claimedTool, "Right" );
 
@@ -1273,8 +1273,8 @@ bool Gnome::checkUniformItem( QString slot, Uniform* uniform, bool& dropped )
 		{
 			auto pos = g->inv()->getItemPos( itemToGet );
 
-			m_btBlackBoard.insert( "ClaimedUniformItem", itemToGet );
-			m_btBlackBoard.insert( "ClaimedUniformItemSlot", slot );
+			m_btBlackBoard["ClaimedUniformItem"] = itemToGet;
+			m_btBlackBoard["ClaimedUniformItemSlot"] = slot.toStdString();
 
 			m_jobID = g->jm()->addJob( "EquipItem", pos, 0, true );
 
@@ -1291,7 +1291,7 @@ bool Gnome::checkUniformItem( QString slot, Uniform* uniform, bool& dropped )
 					m_job->setWorkedBy( m_id );
 					m_job->setDestroyOnAbort( true );
 					log( "JobType " + m_job->type() );
-					m_btBlackBoard.insert( "JobType", m_job->type() );
+					m_btBlackBoard["JobType"] = m_job->type().toStdString();
 					m_currentAction = "job";
 
 					m_workPositionQueue = PriorityQueue<Position, int>();
@@ -1480,10 +1480,10 @@ BT_RESULT Gnome::actionCheckUniform( bool halt = false )
 
 BT_RESULT Gnome::actionUniformCleanUp( bool halt )
 {
-	auto item = m_btBlackBoard.value( "ClaimedUniformItem" ).toUInt();
+	auto item = (unsigned)std::get<int>( m_btBlackBoard.at( "ClaimedUniformItem" ) );
 	g->inv()->setInJob( item, 0 );
-	m_btBlackBoard.remove( "ClaimedUniformItem" );
-	m_btBlackBoard.remove( "ClaimedUniformItemSlot" );
+	m_btBlackBoard.erase( "ClaimedUniformItem" );
+	m_btBlackBoard.erase( "ClaimedUniformItemSlot" );
 
 	return BT_RESULT::FAILURE;
 }
@@ -1528,7 +1528,7 @@ BT_RESULT Gnome::actionCheckBandages( bool halt )
 			auto pos = g->inv()->getItemPos( itemToGet );
 			g->inv()->setInJob( itemToGet, m_id );
 			m_itemToPickUp = itemToGet;
-			m_btBlackBoard.insert( "ClaimedInventoryItem", itemToGet );
+			m_btBlackBoard["ClaimedInventoryItem"] = itemToGet;
 			setCurrentTarget( pos );
 			return BT_RESULT::SUCCESS;
 		}
@@ -2573,8 +2573,8 @@ bool Gnome::equipItem()
 	if ( Global::debugMode )
 		log( "actionEquipUniform" );
 
-	auto itemID = m_btBlackBoard.value( "ClaimedUniformItem" ).toUInt();
-	m_btBlackBoard.remove( "ClaimedUniformItem" );
+	auto itemID = std::get<int>( m_btBlackBoard.at( "ClaimedUniformItem" ) );
+	m_btBlackBoard.erase( "ClaimedUniformItem" );
 
 	QStringList conc;
 
@@ -2583,8 +2583,8 @@ bool Gnome::equipItem()
 		g->inv()->pickUpItem( itemID, m_id );
 		g->inv()->setInJob( itemID, 0 );
 
-		QString slot = m_btBlackBoard.value( "ClaimedUniformItemSlot" ).toString();
-		m_btBlackBoard.remove( "ClaimedUniformItemSlot" );
+		auto slot = QString::fromStdString( std::get<std::string>( m_btBlackBoard.at( "ClaimedUniformItemSlot" ) ) );
+		m_btBlackBoard.erase( "ClaimedUniformItemSlot" );
 
 		QString itemSID          = g->inv()->itemSID( itemID );
 		unsigned int materialUID = g->inv()->materialUID( itemID );

@@ -126,7 +126,7 @@ Creature::Creature( QVariantMap in, Game* game ) :
 
 	m_btName( in.value( "BTName" ).toString() ),
 
-	m_btBlackBoard( in.value( "BTBlackBoard" ).toMap() )
+	m_btBlackBoard( in.value( "BTBlackBoard" ) )
 {
 	m_currentPath.clear();
 
@@ -137,7 +137,7 @@ Creature::Creature( QVariantMap in, Game* game ) :
 
 	if ( in.contains( "BehaviorTreeState" ) )
 	{
-		m_btBlackBoard.insert( "State", in.value( "BehaviorTreeState" ) );
+		m_btBlackBoard["State"] = in.value( "BehaviorTreeState" );
 	}
 	if ( in.contains( "Anatomy" ) )
 	{

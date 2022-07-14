@@ -124,14 +124,11 @@ void GnomeTrader::init()
 
 	loadBehaviorTree( "GnomeTrader" );
 
-	if ( m_btBlackBoard.contains( "BehaviorTreeState" ) )
+	if ( m_btBlackBoard.contains( "State" ) )
 	{
-		QVariantMap btm = m_btBlackBoard.value( "State" ).toMap();
-		if ( m_behaviorTree )
-		{
-			m_behaviorTree->deserialize( btm );
-			m_btBlackBoard.remove( "State" );
-		}
+		const auto btm = std::get<json>( m_btBlackBoard.at( "State" ) );
+		m_btBlackBoard.erase( "State" );
+		m_behaviorTree.reset( BT_Node::deserialize( btm, m_behaviors, m_btBlackBoard ) );
 	}
 }
 
