@@ -22,12 +22,13 @@
 class BT_NodeAction final : public BT_Node
 {
 public:
-	BT_NodeAction( std::string name, QVariantMap& blackboard, std::function<BT_RESULT( bool )> callback );
+	BT_NodeAction( std::string name, BT_BlackboardMap& blackboard );
+	BT_NodeAction( std::string name, BT_BlackboardMap& blackboard, std::function<BT_RESULT( bool )> callback );
 	~BT_NodeAction();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
 
-	void halt();
+	void halt() override;
 
 	BT_Node* addFallback( std::string name )
 	{
@@ -69,6 +70,11 @@ public:
 		return nullptr;
 	};
 
+	[[nodiscard]] json serialize() const override;
+	void deserialize( const json& in, const BT_ActionMap& actionMap ) override;
+
 private:
 	std::function<BT_RESULT( bool )> m_callback;
+
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeAction>("BT_NodeAction");
 };

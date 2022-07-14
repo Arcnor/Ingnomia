@@ -22,8 +22,13 @@
 class BT_NodeInverter final : public BT_Node
 {
 public:
-	BT_NodeInverter( std::string name, QVariantMap& blackboard );
+	BT_NodeInverter( std::string name, BT_BlackboardMap& blackboard );
 	~BT_NodeInverter();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
+
+	[[nodiscard]] json serialize() const override;
+
+private:
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeInverter>("BT_NodeInverter");
 };

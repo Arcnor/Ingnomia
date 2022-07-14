@@ -22,8 +22,13 @@
 class BT_NodeFallbackStar final : public BT_Node
 {
 public:
-	BT_NodeFallbackStar( std::string name, QVariantMap& blackboard );
+	BT_NodeFallbackStar( std::string name, BT_BlackboardMap& blackboard );
 	~BT_NodeFallbackStar();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
+
+	[[nodiscard]] json serialize() const override;
+
+private:
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeFallbackStar>("BT_NodeFallbackStar");
 };

@@ -17,16 +17,12 @@
 */
 #pragma once
 
+#include "bt_node.h"
 #include "bt_tree.h"
 
 #include "pugixml.hpp"
-#include <absl/container/flat_hash_map.h>
-#include <QObject>
-#include <QVariantMap>
 
 #include <functional>
-
-using BT_ActionMap = absl::flat_hash_map<std::string, std::function<BT_RESULT( bool )>>;
 
 class BT_Factory
 {
@@ -34,12 +30,12 @@ public:
 	BT_Factory()  = delete;
 	~BT_Factory() = delete;
 
-	static BT_Node* load( const pugi::xml_node& root, BT_ActionMap& actions, QVariantMap& blackboard );
+	static BT_Node* load( const pugi::xml_node& root, BT_ActionMap& actions, BT_BlackboardMap& blackboard );
 
 private:
-	static BT_Node* createBTNode( const pugi::xml_node& treeElement, BT_Node* parent, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard );
+	static BT_Node* createBTNode( const pugi::xml_node& treeElement, BT_Node* parent, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard );
 
-	static BT_Node* getTree( const std::string& treeID, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard );
+	static BT_Node* getTree( const std::string& treeID, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard );
 
-	static void getNodes( BT_Node* parent, const pugi::xml_node& root, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard );
+	static void getNodes( BT_Node* parent, const pugi::xml_node& root, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard );
 };

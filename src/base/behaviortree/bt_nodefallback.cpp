@@ -17,7 +17,7 @@
 */
 #include "bt_nodefallback.h"
 
-BT_NodeFallback::BT_NodeFallback( std::string name, QVariantMap& blackboard ) :
+BT_NodeFallback::BT_NodeFallback( std::string name, BT_BlackboardMap& blackboard ) :
 	BT_Node( name, blackboard )
 {
 }
@@ -51,4 +51,9 @@ BT_RESULT BT_NodeFallback::tick()
 	// all the children returned FAILURE. Return FAILURE too.
 	haltAllChildren();
 	return BT_RESULT::FAILURE;
+}
+
+json BT_NodeFallback::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

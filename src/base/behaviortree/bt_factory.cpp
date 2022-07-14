@@ -24,7 +24,7 @@ namespace
 class BT_NodeDummy final : public BT_Node
 {
 public:
-	BT_NodeDummy( const std::string& name, QVariantMap& blackboard ) :
+	BT_NodeDummy( const std::string& name, BT_BlackboardMap& blackboard ) :
 		BT_Node( name, blackboard )
 	{
 	}
@@ -43,10 +43,17 @@ public:
 			return nullptr;
 		}
 	}
+	json serialize() const override
+	{
+		return BT_Node::serialize( m_factoryIndex );
+	}
+
+private:
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeDummy>("BT_NodeDummy");
 };
 }
 
-BT_Node* BT_Factory::load( const pugi::xml_node& root, BT_ActionMap& actions, QVariantMap& blackboard )
+BT_Node* BT_Factory::load( const pugi::xml_node& root, BT_ActionMap& actions, BT_BlackboardMap& blackboard )
 {
 	const std::string mainTree = root.attribute( "main_tree_to_execute" ).value();
 
@@ -60,7 +67,7 @@ BT_Node* BT_Factory::load( const pugi::xml_node& root, BT_ActionMap& actions, QV
 	return behaviorTree;
 }
 
-BT_Node* BT_Factory::getTree( const std::string& treeID, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard )
+BT_Node* BT_Factory::getTree( const std::string& treeID, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard )
 {
 	pugi::xml_node treeElement = documentRoot.first_child();
 	while ( treeElement )
@@ -99,7 +106,7 @@ BT_Node* BT_Factory::getTree( const std::string& treeID, const pugi::xml_node& d
 	return nullptr;
 }
 
-void BT_Factory::getNodes( BT_Node* parent, const pugi::xml_node& root, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard )
+void BT_Factory::getNodes( BT_Node* parent, const pugi::xml_node& root, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard )
 {
 	pugi::xml_node treeElement = root.first_child();
 	while ( treeElement )
@@ -115,7 +122,7 @@ void BT_Factory::getNodes( BT_Node* parent, const pugi::xml_node& root, const pu
 	}
 }
 
-BT_Node* BT_Factory::createBTNode( const pugi::xml_node& domElement, BT_Node* parent, const pugi::xml_node& documentRoot, BT_ActionMap& actions, QVariantMap& blackboard )
+BT_Node* BT_Factory::createBTNode( const pugi::xml_node& domElement, BT_Node* parent, const pugi::xml_node& documentRoot, BT_ActionMap& actions, BT_BlackboardMap& blackboard )
 {
 	std::string nodeName = domElement.name();
 	BT_Node* bn      = nullptr;
@@ -157,11 +164,11 @@ BT_Node* BT_Factory::createBTNode( const pugi::xml_node& domElement, BT_Node* pa
 	}
 	else if ( nodeName == "ForceSuccess" )
 	{
-		bn = parent->addForceSuccess();
+		bn = parent->addForceSuccess( domElement.attribute( "name" ).value() );
 	}
 	else if ( nodeName == "ForceFailure" )
 	{
-		bn = parent->addForceFailure();
+		bn = parent->addForceFailure( domElement.attribute( "name" ).value() );
 	}
 	else if ( nodeName == "Sequence" )
 	{

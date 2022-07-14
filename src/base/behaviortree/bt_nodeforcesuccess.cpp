@@ -17,8 +17,8 @@
 */
 #include "bt_nodeforcesuccess.h"
 
-BT_NodeForceSuccess::BT_NodeForceSuccess( QVariantMap& blackboard ) :
-	BT_Node( "ForceSuccess", blackboard )
+BT_NodeForceSuccess::BT_NodeForceSuccess( const std::string& name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
 {
 }
 
@@ -37,4 +37,9 @@ BT_RESULT BT_NodeForceSuccess::tick()
 		}
 	}
 	return BT_RESULT::SUCCESS;
+}
+
+json BT_NodeForceSuccess::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

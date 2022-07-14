@@ -22,12 +22,23 @@
 class BT_NodeBBPrecondition final : public BT_Node
 {
 public:
-	BT_NodeBBPrecondition( std::string name, std::string key, std::string expected, QVariantMap& blackboard );
+	BT_NodeBBPrecondition( std::string name, BT_BlackboardMap& blackboard );
 	~BT_NodeBBPrecondition();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
+
+	[[nodiscard]] json serialize() const override;
 
 private:
 	std::string m_key;
 	std::string m_expected;
+
+	friend class BT_Node;
+	void setInternalData( const std::string& key, const std::string& expected )
+	{
+		m_key = key;
+		m_expected = expected;
+	}
+
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeBBPrecondition>("BT_NodeBBPrecondition");
 };

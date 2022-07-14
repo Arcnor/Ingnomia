@@ -22,8 +22,13 @@
 class BT_NodeForceSuccess final : public BT_Node
 {
 public:
-	BT_NodeForceSuccess( QVariantMap& blackboard );
+	BT_NodeForceSuccess( const std::string& name, BT_BlackboardMap& blackboard );
 	~BT_NodeForceSuccess();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
+
+	[[nodiscard]] json serialize() const override;
+
+private:
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeForceSuccess>("BT_NodeForceSuccess");
 };

@@ -17,8 +17,8 @@
 */
 #include "bt_nodeforcefailure.h"
 
-BT_NodeForceFailure::BT_NodeForceFailure( QVariantMap& blackboard ) :
-	BT_Node( "ForceFailure", blackboard )
+BT_NodeForceFailure::BT_NodeForceFailure( const std::string& name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
 {
 }
 
@@ -37,4 +37,9 @@ BT_RESULT BT_NodeForceFailure::tick()
 		}
 	}
 	return BT_RESULT::FAILURE;
+}
+
+json BT_NodeForceFailure::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

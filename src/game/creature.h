@@ -17,7 +17,6 @@
 */
 #pragma once
 
-#include "../base/behaviortree/bt_factory.h"
 #include "../base/behaviortree/bt_node.h"
 #include "../base/pathfinder.h"
 #include "../base/priorityqueue.h"
@@ -338,7 +337,7 @@ protected:
 	unsigned int m_currentAttackTarget = 0;
 	bool m_goneOffMap = false;
 
-	QVariantMap m_btBlackBoard;
+	BT_BlackboardMap m_btBlackBoard;
 
 	QVariantMap m_attributes;
 	QVariantMap m_skills;

@@ -16,12 +16,11 @@ target_include_directories(IngnomiaBT
 )
 
 target_link_libraries(IngnomiaBT
-        Qt5::Core
-
         absl::hash
         absl::flat_hash_map
 
         spdlog::spdlog
+        nlohmann_json::nlohmann_json
         pugixml::pugixml
 )
 

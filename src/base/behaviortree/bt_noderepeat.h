@@ -22,14 +22,22 @@
 class BT_NodeRepeat final : public BT_Node
 {
 public:
-	BT_NodeRepeat( std::string name, int num, QVariantMap& blackboard );
+	BT_NodeRepeat( std::string name, BT_BlackboardMap& blackboard );
 	~BT_NodeRepeat();
 
-	QVariantMap serialize();
-	void deserialize( QVariantMap in );
+	[[nodiscard]] json serialize() const override;
+	void deserialize( const json& in, const BT_ActionMap& actionMap ) override;
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
 
 private:
 	int m_num = 0;
+
+	friend class BT_Node;
+	void setInternalData( int num )
+	{
+		m_num = num;
+	}
+
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeRepeat>("BT_NodeRepeat");
 };

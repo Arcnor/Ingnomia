@@ -17,7 +17,7 @@
 */
 #include "bt_nodefallbackstar.h"
 
-BT_NodeFallbackStar::BT_NodeFallbackStar( std::string name, QVariantMap& blackboard ) :
+BT_NodeFallbackStar::BT_NodeFallbackStar( std::string name, BT_BlackboardMap& blackboard ) :
 	BT_Node( name, blackboard )
 {
 }
@@ -58,4 +58,9 @@ BT_RESULT BT_NodeFallbackStar::tick()
 	haltAllChildren();
 	m_index = 0;
 	return BT_RESULT::FAILURE;
+}
+
+json BT_NodeFallbackStar::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

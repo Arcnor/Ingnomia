@@ -17,7 +17,7 @@
 */
 #include "bt_nodesequence.h"
 
-BT_NodeSequence::BT_NodeSequence( std::string name, QVariantMap& blackboard ) :
+BT_NodeSequence::BT_NodeSequence( std::string name, BT_BlackboardMap& blackboard ) :
 	BT_Node( name, blackboard )
 {
 }
@@ -51,4 +51,9 @@ BT_RESULT BT_NodeSequence::tick()
 	// all the children returned success. Return SUCCESS too.
 	haltAllChildren();
 	return BT_RESULT::SUCCESS;
+}
+
+json BT_NodeSequence::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

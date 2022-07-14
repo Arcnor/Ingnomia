@@ -17,7 +17,7 @@
 */
 #include "bt_nodeinverter.h"
 
-BT_NodeInverter::BT_NodeInverter( std::string name, QVariantMap& blackboard ) :
+BT_NodeInverter::BT_NodeInverter( std::string name, BT_BlackboardMap& blackboard ) :
 	BT_Node( name, blackboard )
 {
 }
@@ -44,4 +44,9 @@ BT_RESULT BT_NodeInverter::tick()
 	}
 	m_status = BT_RESULT::FAILURE;
 	return m_status;
+}
+
+json BT_NodeInverter::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

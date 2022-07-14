@@ -19,9 +19,8 @@
 
 #include "spdlog/spdlog.h"
 
-BT_NodeRepeat::BT_NodeRepeat( std::string name, int num, QVariantMap& blackboard ) :
-	BT_Node( name, blackboard ),
-	m_num( num )
+BT_NodeRepeat::BT_NodeRepeat( std::string name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
 {
 }
 
@@ -29,63 +28,17 @@ BT_NodeRepeat::~BT_NodeRepeat()
 {
 }
 
-QVariantMap BT_NodeRepeat::serialize()
+json BT_NodeRepeat::serialize() const
 {
-	QVariantMap out;
-	out.insert( "Name", QString::fromStdString(m_name) );
-	out.insert( "ID", m_index );
-	out.insert( "Status", (unsigned char)m_status );
-	out.insert( "Num", m_num );
-
-	QVariantList childs;
-	for ( auto child : m_children )
-	{
-		childs.append( child->serialize() );
-	}
-	out.insert( "Childs", childs );
-
-	return out;
+	auto result = BT_Node::serialize( m_factoryIndex );
+	result["Num"] = m_num;
+	return result;
 }
 
-void BT_NodeRepeat::deserialize( QVariantMap in )
+void BT_NodeRepeat::deserialize( const json& in, const BT_ActionMap& actionMap )
 {
-	if ( QString::fromStdString(m_name) != in.value( "Name" ).toString() )
-	{
-		spdlog::debug("error loading behavior tree state - nodes don't match");
-	}
-	m_index  = in.value( "ID" ).toInt();
-	m_status = (BT_RESULT)in.value( "Status" ).toInt();
-	m_num    = in.value( "Num" ).toInt();
-
-	auto vcl  = in.value( "Childs" ).toList();
-	int index = 0;
-	if ( vcl.size() == m_children.size() )
-	{
-
-		for ( auto child : m_children )
-		{
-			child->deserialize( vcl[index++].toMap() );
-		}
-	}
-	else
-	{
-		//tree changed between saving and loading, this will have undetermined results
-		// TODO throw exception or make config option to allow or deny loading this
-		if ( vcl.size() < m_children.size() )
-		{
-			for ( auto vcm : vcl )
-			{
-				m_children[index++]->deserialize( vcm.toMap() );
-			}
-		}
-		else
-		{
-			for ( auto child : m_children )
-			{
-				child->deserialize( vcl[index++].toMap() );
-			}
-		}
-	}
+	BT_Node::deserialize( in, actionMap );
+	m_num = in.value( "Num", -1 );
 }
 
 BT_RESULT BT_NodeRepeat::tick()

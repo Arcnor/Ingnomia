@@ -17,10 +17,8 @@
 */
 #include "bt_nodebbprecondition.h"
 
-BT_NodeBBPrecondition::BT_NodeBBPrecondition( std::string name, std::string key, std::string expected, QVariantMap& blackboard ) :
-	BT_Node( name, blackboard ),
-	m_key( key ),
-	m_expected( expected )
+BT_NodeBBPrecondition::BT_NodeBBPrecondition( std::string name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
 {
 }
 
@@ -30,7 +28,14 @@ BT_NodeBBPrecondition::~BT_NodeBBPrecondition()
 
 BT_RESULT BT_NodeBBPrecondition::tick()
 {
-	if ( m_blackboard.value( QString::fromStdString(m_key) ).toString().toStdString() == m_expected || m_expected == "*" )
+	bool found = false;
+	const auto it = m_blackboard.find(m_key);
+	if (it != m_blackboard.end()) {
+		const std::string *blackboardValue = std::get_if<std::string>( &it->second );
+		found = *blackboardValue == m_expected;
+	}
+
+	if ( found || m_expected == "*" )
 	{
 		if ( m_children.size() > 0 )
 		{
@@ -38,4 +43,10 @@ BT_RESULT BT_NodeBBPrecondition::tick()
 		}
 	}
 	return BT_RESULT::FAILURE;
+}
+
+
+json BT_NodeBBPrecondition::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
 }

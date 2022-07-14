@@ -17,11 +17,13 @@
 */
 #include "bt_node.h"
 
+#include <utility>
+
 #include "bt_tree.h"
 #include "spdlog/spdlog.h"
 
-BT_Node::BT_Node( std::string name, QVariantMap& blackboard ) :
-	m_name( name ),
+BT_Node::BT_Node( std::string name, BT_BlackboardMap& blackboard ) :
+	m_name(std::move( name )),
 	m_blackboard( blackboard )
 {
 }
@@ -34,61 +36,77 @@ BT_Node::~BT_Node()
 	}
 }
 
-QVariantMap BT_Node::serialize() const
+json BT_Node::serialize( int factoryId ) const
 {
-	QVariantMap out;
-	out.insert( "Name", QString::fromStdString(m_name) );
-	out.insert( "ID", m_index );
-	out.insert( "Status", (unsigned char)m_status );
-
-	QVariantList childs;
+	std::vector<json> childs;
 	for ( const auto& child : m_children )
 	{
-		childs.append( child->serialize() );
+		childs.push_back( child->serialize() );
 	}
-	out.insert( "Childs", childs );
 
-	return out;
+	return json {
+		{ "_Type", m_typeMap[factoryId] },
+		{ "Name", m_name },
+		{ "ID", m_index },
+		{ "Status", m_status },
+		{ "Childs", childs },
+	};
 }
 
-void BT_Node::deserialize( QVariantMap in )
+BT_Node* BT_Node::deserialize( const json& in, const BT_ActionMap& actionMap, BT_BlackboardMap& blackboard )
 {
-	if ( QString::fromStdString(m_name) != in.value( "Name" ).toString() )
+	const auto typeStr = in.value("_Type", "");
+	const auto name = in.value( "Name", "" );
+	auto result = m_factoryMap[typeStr](name, blackboard);
+	result->deserialize( in, actionMap );
+
+	auto vcl  = in.at( "Childs" );
+	for ( const auto& child : vcl )
+	{
+		result->m_children.push_back( deserialize( child, actionMap, blackboard ) );
+	}
+
+	return result;
+}
+
+void BT_Node::deserialize( const json& in, const BT_ActionMap& actionMap )
+{
+	if ( m_name != in.value( "Name", "" ) )
 	{
 		spdlog::debug("error loading behavior tree state - nodes don't match");
 	}
-	m_index  = in.value( "ID" ).toInt();
-	m_status = (BT_RESULT)in.value( "Status" ).toInt();
-
-	auto vcl  = in.value( "Childs" ).toList();
-	int index = 0;
-	if ( vcl.size() == m_children.size() )
-	{
-
-		for ( auto child : m_children )
-		{
-			child->deserialize( vcl[index++].toMap() );
-		}
-	}
-	else
-	{
-		//tree changed between saving and loading, this will have undetermined results
-		// TODO throw exception or make config option to allow or deny loading this
-		if ( vcl.size() < m_children.size() )
-		{
-			for ( auto vcm : vcl )
-			{
-				m_children[index++]->deserialize( vcm.toMap() );
-			}
-		}
-		else
-		{
-			for ( auto child : m_children )
-			{
-				child->deserialize( vcl[index++].toMap() );
-			}
-		}
-	}
+	m_index  = in.value( "ID", -1 );
+	m_status = in.value( "Status", BT_RESULT::IDLE );
+//
+//	auto vcl  = in.at( "Childs" );
+//	int index = 0;
+//	if ( vcl.size() == m_children.size() )
+//	{
+//
+//		for ( auto child : m_children )
+//		{
+//			child->deserialize( vcl[index++], actionMap );
+//		}
+//	}
+//	else
+//	{
+//		//tree changed between saving and loading, this will have undetermined results
+//		// TODO throw exception or make config option to allow or deny loading this
+//		if ( vcl.size() < m_children.size() )
+//		{
+//			for ( auto vcm : vcl )
+//			{
+//				m_children[index++]->deserialize( vcm, <#initializer #> );
+//			}
+//		}
+//		else
+//		{
+//			for ( auto child : m_children )
+//			{
+//				child->deserialize( vcl[index++], <#initializer #> );
+//			}
+//		}
+//	}
 }
 
 BT_Node* BT_Node::addFallback( std::string name )
@@ -117,23 +135,23 @@ BT_Node* BT_Node::addSequence( std::string name )
 
 BT_Node* BT_Node::addSequenceStar( std::string name )
 {
-	BT_NodeSequenceStar* bn = new BT_NodeSequenceStar( name, m_blackboard, true );
+	BT_NodeSequenceStar* bn = new BT_NodeSequenceStar( name, m_blackboard );
 	m_children.push_back( bn );
 
 	return bn;
 }
 
-BT_Node* BT_Node::addForceSuccess()
+BT_Node* BT_Node::addForceSuccess( const std::string& name )
 {
-	BT_NodeForceSuccess* bn = new BT_NodeForceSuccess( m_blackboard );
+	BT_NodeForceSuccess* bn = new BT_NodeForceSuccess( name.empty() ? "ForceSuccess" : name, m_blackboard );
 	m_children.push_back( bn );
 
 	return bn;
 }
 
-BT_Node* BT_Node::addForceFailure()
+BT_Node* BT_Node::addForceFailure( const std::string& name )
 {
-	BT_NodeForceFailure* bn = new BT_NodeForceFailure( m_blackboard );
+	BT_NodeForceFailure* bn = new BT_NodeForceFailure( name.empty() ? "ForceFailure" : name, m_blackboard );
 	m_children.push_back( bn );
 
 	return bn;
@@ -149,7 +167,8 @@ BT_Node* BT_Node::addInverter( std::string name )
 
 BT_Node* BT_Node::addRepeat( std::string name, int num )
 {
-	BT_NodeRepeat* bn = new BT_NodeRepeat( name, num, m_blackboard );
+	BT_NodeRepeat* bn = new BT_NodeRepeat( name, m_blackboard );
+	bn->setInternalData( num );
 	m_children.push_back( bn );
 
 	return bn;
@@ -157,7 +176,8 @@ BT_Node* BT_Node::addRepeat( std::string name, int num )
 
 BT_Node* BT_Node::addRepeatUntilSuccess( std::string name, int num )
 {
-	BT_NodeRepeatUntilSuccess* bn = new BT_NodeRepeatUntilSuccess( name, num, m_blackboard );
+	BT_NodeRepeatUntilSuccess* bn = new BT_NodeRepeatUntilSuccess( name, m_blackboard );
+	bn->setInternalData( num );
 	m_children.push_back( bn );
 
 	return bn;
@@ -186,7 +206,8 @@ BT_Node* BT_Node::addAction( std::string name, std::function<BT_RESULT( bool )> 
 
 BT_Node* BT_Node::addBBPrecondition( std::string name, std::string key, std::string expected )
 {
-	BT_NodeBBPrecondition* bn = new BT_NodeBBPrecondition( name, key, expected, m_blackboard );
+	BT_NodeBBPrecondition* bn = new BT_NodeBBPrecondition( name, m_blackboard );
+	bn->setInternalData( key, expected );
 	m_children.push_back( bn );
 
 	return bn;

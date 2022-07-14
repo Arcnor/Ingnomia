@@ -17,7 +17,14 @@
 */
 #include "bt_nodeconditional.h"
 
-BT_NodeConditional::BT_NodeConditional( std::string name, QVariantMap& blackboard, std::function<BT_RESULT( bool )> callback ) :
+#include "spdlog/spdlog.h"
+
+BT_NodeConditional::BT_NodeConditional( std::string name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
+{
+}
+
+BT_NodeConditional::BT_NodeConditional( std::string name, BT_BlackboardMap& blackboard, std::function<BT_RESULT( bool )> callback ) :
 	BT_Node( name, blackboard ),
 	m_callback( callback )
 {
@@ -39,4 +46,21 @@ void BT_NodeConditional::halt()
 	{
 		m_status = BT_RESULT::IDLE; // m_callback( true );
 	}
+}
+
+json BT_NodeConditional::serialize() const
+{
+	return BT_Node::serialize( m_factoryIndex );
+}
+
+
+void BT_NodeConditional::deserialize( const json& in, const BT_ActionMap& actionMap )
+{
+	BT_Node::deserialize( in, actionMap );
+	const auto it = actionMap.find(m_name);
+	if (it == actionMap.end()) {
+		spdlog::critical("Cannot find action with ID {}", m_name);
+		throw std::runtime_error("Cannot find action");
+	}
+	m_callback = it->second;
 }

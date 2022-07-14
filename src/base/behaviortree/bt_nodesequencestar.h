@@ -22,14 +22,16 @@
 class BT_NodeSequenceStar final : public BT_Node
 {
 public:
-	BT_NodeSequenceStar( std::string name, QVariantMap& blackboard, bool resetOnFailure );
+	BT_NodeSequenceStar( std::string name, BT_BlackboardMap& blackboard );
 	~BT_NodeSequenceStar();
 
-	QVariantMap serialize();
-	void deserialize( QVariantMap in );
+	[[nodiscard]] json serialize() const override;
+	void deserialize( const json& in, const BT_ActionMap& actionMap ) override;
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
 
 private:
 	bool m_resetOnFailure = true;
+
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeSequenceStar>("BT_NodeSequenceStar");
 };

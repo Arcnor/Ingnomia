@@ -22,8 +22,13 @@
 class BT_NodeForceFailure final : public BT_Node
 {
 public:
-	BT_NodeForceFailure( QVariantMap& blackboard );
+	BT_NodeForceFailure( const std::string& name, BT_BlackboardMap& blackboard );
 	~BT_NodeForceFailure();
 
-	BT_RESULT tick();
+	BT_RESULT tick() override;
+
+	[[nodiscard]] json serialize() const override;
+
+private:
+	static inline int m_factoryIndex = registerFactoryMethod<BT_NodeForceFailure>("BT_NodeForceFailure");
 };

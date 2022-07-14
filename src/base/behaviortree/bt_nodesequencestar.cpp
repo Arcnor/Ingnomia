@@ -19,9 +19,8 @@
 
 #include "spdlog/spdlog.h"
 
-BT_NodeSequenceStar::BT_NodeSequenceStar( std::string name, QVariantMap& blackboard, bool resetOnFailure ) :
-	BT_Node( name, blackboard ),
-	m_resetOnFailure( resetOnFailure )
+BT_NodeSequenceStar::BT_NodeSequenceStar( std::string name, BT_BlackboardMap& blackboard ) :
+	BT_Node( name, blackboard )
 {
 }
 
@@ -29,63 +28,17 @@ BT_NodeSequenceStar::~BT_NodeSequenceStar()
 {
 }
 
-QVariantMap BT_NodeSequenceStar::serialize()
+json BT_NodeSequenceStar::serialize() const
 {
-	QVariantMap out;
-	out.insert( "Name", QString::fromStdString(m_name) );
-	out.insert( "ID", m_index );
-	out.insert( "Status", (unsigned char)m_status );
-	out.insert( "RoF", m_resetOnFailure );
-
-	QVariantList childs;
-	for ( auto child : m_children )
-	{
-		childs.append( child->serialize() );
-	}
-	out.insert( "Childs", childs );
-
-	return out;
+	auto result = BT_Node::serialize( m_factoryIndex );
+	result["RoF"] = m_resetOnFailure;
+	return result;
 }
 
-void BT_NodeSequenceStar::deserialize( QVariantMap in )
+void BT_NodeSequenceStar::deserialize( const json& in, const BT_ActionMap& actionMap )
 {
-	if ( QString::fromStdString(m_name) != in.value( "Name" ).toString() )
-	{
-		spdlog::debug("error loading behavior tree state - nodes don't match");
-	}
-	m_index          = in.value( "ID" ).toInt();
-	m_status         = (BT_RESULT)in.value( "Status" ).toInt();
-	m_resetOnFailure = in.value( "RoF" ).toBool();
-
-	auto vcl  = in.value( "Childs" ).toList();
-	int index = 0;
-	if ( vcl.size() == m_children.size() )
-	{
-
-		for ( auto child : m_children )
-		{
-			child->deserialize( vcl[index++].toMap() );
-		}
-	}
-	else
-	{
-		//tree changed between saving and loading, this will have undetermined results
-		// TODO throw exception or make config option to allow or deny loading this
-		if ( vcl.size() < m_children.size() )
-		{
-			for ( auto vcm : vcl )
-			{
-				m_children[index++]->deserialize( vcm.toMap() );
-			}
-		}
-		else
-		{
-			for ( auto child : m_children )
-			{
-				child->deserialize( vcl[index++].toMap() );
-			}
-		}
-	}
+	BT_Node::deserialize( in, actionMap );
+	m_resetOnFailure = in.value( "RoF", false );
 }
 
 BT_RESULT BT_NodeSequenceStar::tick()
