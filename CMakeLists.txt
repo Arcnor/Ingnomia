@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.0)
+cmake_minimum_required(VERSION 3.20.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,38 +32,37 @@ if (APPLE)
 endif()
 
 if(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gy /Gw /Oi /MP /GS- /W3 /permissive- /await:strict /Zc:__cplusplus /Zc:rvalueCast /Zc:strictStrings /Zc:referenceBinding /Zc:ternary /Zi /w24458 /w34456 /w24702")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /CGTHREADS:8 /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Ob2")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Gy /Gw /Oi /MP /GS- /W3 /bigobj /permissive- /await:strict /Zc:__cplusplus /Zc:rvalueCast /Zc:strictStrings /Zc:referenceBinding /Zc:ternary /Zi /w24458 /w34456 /w24702")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /CGTHREADS:8 /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:NOICF")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Ob3")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/modules")
 
-find_package(Abseil REQUIRED)
-find_package(Sigslot REQUIRED)
-find_package(sqlite3 REQUIRED)
-find_package(fmt REQUIRED)
+
+find_package(absl CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(BGFX CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
+find_package(PalSigslot CONFIG REQUIRED)
+find_package(platform_folders CONFIG REQUIRED)
+find_package(protobuf CONFIG REQUIRED)
+find_package(pugixml CONFIG REQUIRED)
+find_package(range-v3 CONFIG REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
+find_package(sdl2-image CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+find_package(STEAMWORKSSDK CONFIG REQUIRED)
 
 find_package(Qt5 REQUIRED QUIET COMPONENTS Core Xml Sql OpenGL)
-
-find_package(BGFX REQUIRED)
-find_package(RangesV3 REQUIRED)
-
-find_package(NlohmannJson REQUIRED)
-find_package(spdlog REQUIRED)
-find_package(pugixml REQUIRED)
-find_package(googletest REQUIRED)
-find_package(PlatformFolders REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_Image REQUIRED)
-find_package(STB REQUIRED)
-
 set(IMGUI_EXTRA_CONFIG "${CMAKE_SOURCE_DIR}/src/debug/imgui/ing_imconfig.h")
-find_package(DearImGui REQUIRED)
 
-find_package(Steam REQUIRED)
 find_package(Noesis REQUIRED)
-find_package(OpenALSoft REQUIRED)
 # Noesis license
 set(NOESIS_LICENSE_NAME "" CACHE STRING "Name")
 set(NOESIS_LICENSE_KEY "" CACHE STRING "Key")
@@ -91,13 +90,23 @@ set_target_properties(${PROJECT_NAME}
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY AUTOGEN_SOURCE_GROUP "Generated")
 
-add_subdirectory(content) # Deployable content
+add_subdirectory(content)
+add_subdirectory(shaders)
+
+add_dependencies(${PROJECT_NAME} IngnomiaContent IngnomiaShaders)
+
 # Copy content to target directory
 add_custom_command(TARGET ${PROJECT_NAME}
 	POST_BUILD
 	COMMAND
 		${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/content $<TARGET_FILE_DIR:${PROJECT_NAME}>/content
+	COMMAND
+		${CMAKE_COMMAND} -E copy_directory
+		${CMAKE_CURRENT_BINARY_DIR}/shaders/game $<TARGET_FILE_DIR:${PROJECT_NAME}>/content/shaders/game
+	COMMAND
+		${CMAKE_COMMAND} -E copy_directory
+		${CMAKE_CURRENT_BINARY_DIR}/shaders/noesis $<TARGET_FILE_DIR:${PROJECT_NAME}>/content/shaders/noesis
 )
 
 if(WIN32)
@@ -119,12 +128,6 @@ target_sources(${PROJECT_NAME}
 		Changelog.md
 		README.md
 		LICENSE
-		${sqlite3_SOURCE_DIR}/sqlite3.c
-)
-
-target_include_directories(${PROJECT_NAME}
-	PRIVATE
-		${sqlite3_SOURCE_DIR}
 )
 
 add_subdirectory(src) # Sources list
@@ -137,31 +140,32 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${stb_SOURCE_DIR})
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
 		Ingnomia::BehaviorTree
+		Ingnomia::Protocol
 
 		Qt5::Core
 		Qt5::Sql
 		Qt5::OpenGL
-		Steam
+		STEAMWORKSSDK::STEAMWORKSSDK
 		NoesisApp
 		fastnoise
-		exprtk
 		OpenAL::OpenAL
 		absl::hash
 		absl::flat_hash_map
-		Pal::Sigslot
 		fmt::fmt
+		unofficial::sqlite3::sqlite3
+		Pal::Sigslot
 
-		bgfx bx bimg
+		bgfx::bgfx bgfx::bx bgfx::bimg
 		range-v3::range-v3
 
 		nlohmann_json::nlohmann_json
 		pugixml::pugixml
 		sago::platform_folders
 
-		DearImGui::DearImGui
+		imgui::imgui
 
-		SDL2::SDL2main SDL2::SDL2-static
-		SDL2_image::SDL2_image-static
+		SDL2::SDL2main SDL2::SDL2
+		SDL2::SDL2_image
 )
 
 # Noesis license
@@ -226,7 +230,7 @@ install(
 	DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-get_target_property(STEAM_DLL Steam LOCATION)
+get_target_property(STEAM_DLL STEAMWORKSSDK::STEAMWORKSSDK LOCATION)
 get_target_property(NOESIS_DLL Noesis LOCATION)
 list(APPEND RUNTIME_DLLS ${STEAM_DLL})
 list(APPEND RUNTIME_DLLS ${NOESIS_DLL})

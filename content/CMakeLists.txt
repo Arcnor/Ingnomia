@@ -3,20 +3,14 @@ file(
 	RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
 	"*.xml"
 	"*.json"
-	"*.glsl"
 	"*.xaml"
 	"*.ttf"
 	"*.otf"
 	"*.png"
 	"*.sql"
+	"*.textproto"
 	"*.wav"
 	"*License*"
-)
-
-target_sources(${PROJECT_NAME}
-	PRIVATE
-		${SOURCE_LIST}
-		${CMAKE_CURRENT_LIST_FILE}
 )
 
 foreach ( FILE ${SOURCE_LIST} )
@@ -26,3 +20,10 @@ foreach ( FILE ${SOURCE_LIST} )
 		DESTINATION "${CMAKE_INSTALL_BINDIR}/content/${DIR}"
 	)
 endforeach()
+
+add_custom_target(IngnomiaContent
+	SOURCES
+		${SOURCE_LIST}
+		${CMAKE_CURRENT_LIST_FILE}
+)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SOURCE_LIST})
